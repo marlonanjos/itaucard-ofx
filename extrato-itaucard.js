@@ -1,6 +1,8 @@
 (function() {
 
   const startOfx = () => {
+    cardDetail = document.querySelector("#idImpressaoOuPDF > table:nth-child(2) > caption > strong").textContent;
+    cardNumber = cardDetail.substring(cardDetail.length - 4);
     return `
 OFXHEADER:100
 DATA:OFXSGML
@@ -16,6 +18,12 @@ NEWFILEUID:NONE
   <BANKMSGSRSV1>
     <STMTTRNRS>
       <STMTRS>
+      <CURDEF>BRL
+        <BANKACCTFROM>
+          <BANKID>0341
+          <ACCTID>${cardNumber}
+          <ACCTTYPE>CHECKING
+        </BANKACCTFROM>
         <BANKTRANLIST>`;
   }
 
@@ -63,17 +71,33 @@ NEWFILEUID:NONE
     var impressao = document.getElementById("idImpressaoOuPDF");
     let checkNum = 1;
 
-    impressao.getElementsByTagName('table')[1].tBodies[0].querySelectorAll('tr').forEach(function(charge){
-      
-      chargeDetails = charge.getElementsByTagName('td');
-      console.log(chargeDetails);
-      const date = normalizeDate(chargeDetails[0].textContent);
-      const description = chargeDetails[1].textContent.trim();
-      const amount = normalizeAmount(chargeDetails[2].textContent);
+    impressao.querySelectorAll('table').forEach(function(chargeTable){
+      if (chargeTable.getAttribute('summary') === 'Tabela de lançamentos nacionais do cartão de crédito') {
+        chargeTable.tBodies[0].querySelectorAll('tr').forEach(function(charge){
+          chargeDetails = charge.getElementsByTagName('td');
+          console.log(chargeDetails);
+          const date = normalizeDate(chargeDetails[0].textContent);
+          const description = chargeDetails[1].textContent.trim();
+          const amount = normalizeAmount(chargeDetails[2].textContent);
 
-      ofx += bankStatement(checkNum, date, amount, description);
-      checkNum = ++checkNum;
+          ofx += bankStatement(checkNum, date, amount, description);
+          checkNum = ++checkNum;
+        });
+      }
+      else if ((chargeTable.getAttribute('summary') === 'Tabela de lançamentos internacionais do cartão de crédito')) {
+        chargeTable.tBodies[0].querySelectorAll('tr').forEach(function(charge){
+          chargeDetails = charge.getElementsByTagName('td');
+          console.log(chargeDetails);
+          const date = normalizeDate(chargeDetails[0].textContent);
+          const description = chargeDetails[1].textContent.trim();
+          const amount = normalizeAmount(chargeDetails[5].textContent);
+
+          ofx += bankStatement(checkNum, date, amount, description);
+          checkNum = ++checkNum;
+        });
+      }
     });
+
 
     ofx += endOfx();
     
