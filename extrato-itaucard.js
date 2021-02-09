@@ -72,7 +72,20 @@ NEWFILEUID:NONE
     let checkNum = 1;
 
     impressao.querySelectorAll('table').forEach(function(chargeTable){
-      if (chargeTable.getAttribute('summary') === 'Tabela de lançamentos nacionais do cartão de crédito') {
+      if (chargeTable.getAttribute('summary') === 'Tabela com informações de saldo da fatura anterior') {
+        chargeTable.tBodies[0].querySelectorAll('tr').forEach(function(charge){
+          chargeDetails = charge.getElementsByTagName('td');
+          console.log(chargeDetails);
+          if (chargeDetails[1].textContent.trim !== "" && chargeDetails[1].textContent.indexOf('/') >= 0) { 
+            const date = normalizeDate(chargeDetails[1].textContent);
+            const description = chargeDetails[2].textContent.trim();
+            const amount = normalizeAmount(chargeDetails[3].textContent);
+            ofx += bankStatement(checkNum, date, amount, description);
+            checkNum = ++checkNum;
+          }
+        });
+      }
+      else if (chargeTable.getAttribute('summary') === 'Tabela de lançamentos nacionais do cartão de crédito') {
         chargeTable.tBodies[0].querySelectorAll('tr').forEach(function(charge){
           chargeDetails = charge.getElementsByTagName('td');
           console.log(chargeDetails);
@@ -96,6 +109,20 @@ NEWFILEUID:NONE
           checkNum = ++checkNum;
         });
       }
+      else if ((chargeTable.getAttribute('summary') === 'Tabela de encargos e serviços, pré-pago e compras')) {
+        chargeTable.tBodies[0].querySelectorAll('tr').forEach(function(charge){
+          chargeDetails = charge.getElementsByTagName('td');
+          console.log(chargeDetails);
+          if (chargeDetails[0].textContent.trim !== "" && chargeDetails[0].textContent.indexOf('/') >= 0) { 
+            const date = normalizeDate(chargeDetails[0].textContent);
+            const description = chargeDetails[1].textContent.trim();
+            const amount = normalizeAmount(chargeDetails[2].textContent);
+            ofx += bankStatement(checkNum, date, amount, description);
+            checkNum = ++checkNum;
+          }
+          
+        });
+      }
     });
 
 
@@ -111,6 +138,7 @@ NEWFILEUID:NONE
     button.classList.add('secondary');
     button.setAttribute('tabindex', '0');
     button.setAttribute('href', '#');
+    button.setAttribute('id', 'exportarOFX');
     button.textContent = "exportar para OFX";
 
     button.addEventListener('click', generateOfx)
@@ -118,17 +146,17 @@ NEWFILEUID:NONE
     return button;
   }
   
-  const exportOfxButtonAlreadyExists = (tabId) =>
-    document.querySelectorAll(".summary [role=\"gen-ofx-"+tabId+"\"]").length > 0
+
 
   const insertExportButtonCallback = (mutationList, observer) => {
 
     var showResumo = document.getElementsByClassName("showResumo");
-    if (showResumo.length > 0) {
+    var exportButton = document.getElementById('exportarOFX');
+    if (showResumo.length > 0 && !exportButton) {
       console.log("Show Resumo encontrado!");
       const exportOfxButton =  createExportButton();
       showResumo[0].parentNode.appendChild(exportOfxButton);
-      observer.disconnect();
+      //observer.disconnect();
     }
 
   }
