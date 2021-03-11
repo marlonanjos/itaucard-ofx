@@ -57,6 +57,7 @@ NEWFILEUID:NONE
     return year+dateArray[1]+dateArray[0];
   }
 
+  
   const exportOfx = (ofx) => {
     link = document.createElement("a");
     link.setAttribute("href", 'data:application/x-ofx,'+encodeURIComponent(ofx));
@@ -89,9 +90,17 @@ NEWFILEUID:NONE
         chargeTable.tBodies[0].querySelectorAll('tr').forEach(function(charge){
           chargeDetails = charge.getElementsByTagName('td');
           console.log(chargeDetails);
-          const date = normalizeDate(chargeDetails[0].textContent);
+          let date = normalizeDate(chargeDetails[0].textContent);
           const description = chargeDetails[1].textContent.trim();
           const amount = normalizeAmount(chargeDetails[2].textContent);
+
+          //Verifica se é um parcelamento
+          
+          if ( /\d{2}\/\d{2}/.test(description) && !/01\/\d{2}/.test(description)) {
+            mes = document.querySelector("#faturaCartao > div:nth-child(5) > div:nth-child(2) > p.info.info-medium").textContent.substr(3,2) - 1;
+            if (mes.toString.length < 2) { mes = "0" + mes; }
+            date = normalizeDate("01/" + mes);
+          }
 
           ofx += bankStatement(checkNum, date, amount, description);
           checkNum = ++checkNum;
